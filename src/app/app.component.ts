@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import { NgFor, NgClass } from '@angular/common';
+import { NgFor, NgClass, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular'; // Angular Data Grid Component
 import { ColDef, RowSelectionOptions, GridApi, SelectionChangedEvent } from 'ag-grid-community'; // Column Definition Type Interface
@@ -17,54 +17,65 @@ import { ColDef, RowSelectionOptions, GridApi, SelectionChangedEvent } from 'ag-
     FormsModule,
     NgClass,
     AgGridAngular,
+    NgIf
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
   private gridApi: GridApi | undefined;
-  ingredient!: string;
+  /**
+   * 有効フラグ
+   * true: Aを有効選択時→divA有効
+   * false: Bを有効選択時→divB、ラジオボタン有効。ag-gridのチェックボックス表示
+   */
+  flag: boolean = true;
   // ラジオボタン選択状態
   selectedCategory: any = null;
-
-  flag: boolean = true;
+  selectedCategoryTarget: any = null;
   // 合計値
   total: number = 0;
 
+  // ラジオボタン項目（更新対象）
+  categoriesTarget: any[] = [
+    { name: 'アイテム1', key: 'TA' },
+    { name: 'アイテム2', key: 'TB' },
+  ];
+
+  // ラジオボタン項目（チェンジイベントあり）
   categories: any[] = [
     { name: 'Aを有効', key: 'A' },
     { name: 'Bを有効', key: 'B' },
   ];
 
+  // 初期表示
   ngOnInit() {
     console.log('[ngOnInit] execute');
-    this.selectedCategory = this.categories[1];
+    this.selectedCategory = this.categories[0];
     this.setCurrentClasses();
   }
 
-  // divの活性化切り替え
+  // divスタイル
   divACurrentClasses: Record<string, boolean> = {};
   divBCurrentClasses: Record<string, boolean> = {};
 
+  // divスタイルセット
   setCurrentClasses() {
     this.divACurrentClasses = {
-      disabled: this.selectedCategory.key != 'A',
+      // css class: 条件
+      disabled: !this.flag,
     };
 
     this.divBCurrentClasses = {
-      disabled: this.selectedCategory.key != 'B',
+      disabled: this.flag,
     };
   }
 
-  // これなくてよいのでは...?→やっぱり必要
+  // ラジオボタンイベント
   clickRadio() {
-    // this.flag = this.selectedCategory.key == 'A';
+    this.flag = this.selectedCategory.key == 'A';
     this.setCurrentClasses();
     this.setRowSelection();
-  }
-
-  clickBtn() {
-    this.setCurrentClasses();
   }
 
   // Row Data: The data to be displayed.
@@ -82,58 +93,51 @@ export class AppComponent implements OnInit {
     { field: "electric" }
   ];
 
+  // ag-grid チェックボックス
   rowSelection: RowSelectionOptions = {
     mode: 'multiRow',
     headerCheckbox: true,
-    checkboxes: this.selectedCategory && this.selectedCategory.key != 'B',
-    // enableClickSelection: false,
-    // enableSelectionWithoutKeys: false,
-    // hideDisabledCheckboxes: true,
+    checkboxes: !this.flag,
   };
 
+  // ag-grid チェックボックス更新
   setRowSelection() {
     this.rowSelection = {
       mode: 'multiRow',
       headerCheckbox: true,
-      checkboxes: this.selectedCategory && this.selectedCategory.key != 'B',
+      checkboxes: !this.flag,
     }
   }
 
-  rowClassRules = {
-    // apply red to Ford cars
-    // 'rag-red': (params: { data: { make: string; }; }) => params.data.make === 'Ford',
-    'ag-row-selected': () => this.selectedCategory && this.selectedCategory.key != 'B',
-  };
+  // チェックボックスを無効化できない...?
+  // // ag-grid 行クラスルール
+  // rowClassRules = {
+  //   'ag-row-selected': () => this.selectedCategory && this.selectedCategory.key != 'B',
+  // };
+  // // rowClass = 'ag-row-selected';
+  // rowClass = '';
 
-  // rowClass = 'ag-row-selected';
-  rowClass = '';
-
+  // ag-grid 選択行データ取得
   getSelectedRowData() {
     let selectedData = [];
     if (this.gridApi) {
       selectedData = this.gridApi.getSelectedRows();
-      // alert(`Selected Data:\n${JSON.stringify(selectedData)}`);
+      console.log(`Selected Data:\n${JSON.stringify(selectedData)}`);
     }
     return selectedData;
   }
 
+  // ag-grid 選択イベント
   onSelectionChanged(event: SelectionChangedEvent) {
     if (this.gridApi) {
       const selectedData = this.gridApi.getSelectedRows();
       console.log('Selection Changed', selectedData);
+      this.total = Object.values(selectedData).reduce((acc, value) => acc + value.price, 0);
     }
   }
 
   onGridReady(params: { api: GridApi<any>; }) {
     this.gridApi = params.api;
-
-    // this.http
-    //   .get<any[]>(
-    //     'https://raw.githubusercontent.com/ag-grid/ag-grid/master/grid-packages/ag-grid-docs/src/olympicWinnersSmall.json'
-    //   )
-    //   .subscribe((data) => {
-    //     this.rowData = data;
-    //   });
   }
 
   clickBtnSum() {
