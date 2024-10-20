@@ -1,0 +1,45 @@
+<div disabled="true">
+  何もしてない{{selectedCategory.name}}
+</div>
+
+<div [ngClass]="flag ? 'disabled' : ''">
+  活性/非活性テスト用Flag
+</div>
+
+<div [ngClass]="divACurrentClasses">
+  活性/非活性テスト用A
+</div>
+
+<div [ngClass]="divBCurrentClasses">
+  活性/非活性テスト用B
+</div>
+
+<button pButton pRipple label="これで切り替えます" class="p-button-success" (click)="clickBtn()">
+</button>
+
+<button pButton pRipple label="Submit" class="p-button-success" [disabled]="flag">
+</button>
+
+<div class="card flex justify-content-center">
+  <div class="flex flex-column gap-3">
+    <div *ngFor="let category of categories" class="field-checkbox">
+      <p-radioButton [inputId]="category.key" name="category" [value]="category" [(ngModel)]="selectedCategory"
+        (onClick)="clickRadio()" />
+      <label [for]="category.key" class="ml-2">
+        {{ category.name }}
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- The AG Grid component -->
+<ag-grid-angular [rowClass]="rowClass" [rowData]="rowData" [columnDefs]="colDefs" [rowSelection]="rowSelection"
+  (gridReady)="onGridReady($event)" (selectionChanged)="onSelectionChanged($event)" class="ag-theme-quartz"
+  style="height: 200px;" />
+
+<button pButton pRipple label="合計" class="p-button-success" (click)="clickBtnSum()">
+</button>
+
+<div>
+  合計：{{ total }}
+</div>
